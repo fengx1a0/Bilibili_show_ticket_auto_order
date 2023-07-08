@@ -10,6 +10,7 @@ from time import sleep
 from urllib import request
 from urllib.request import Request as Reqtype
 from urllib.parse import urlencode
+from geetest import dealCode
 
 
 
@@ -17,7 +18,7 @@ class Api:
     """
     API操作
     """
-    def __init__(self,proxies=None,specificID=None):
+    def __init__(self,proxies=None,specificID=None,sleepTime=0.15):
         self.proxies=proxies
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:52.0) Gecko/20100101 Firefox/52.0",
@@ -34,6 +35,7 @@ class Api:
             "Accept-Encoding": "",
             "Connection": "keep-alive"
         }
+        self.sleepTime = sleepTime
         self.user_data = {}
         self.user_data["specificID"] = specificID
         self.user_data["username"] = ""
@@ -100,6 +102,9 @@ class Api:
         # 获取订单信息
         url = "https://show.bilibili.com/api/ticket/project/get?version=134&id=" + self.user_data["project_id"] + "&project_id="+ self.user_data["project_id"]
         data = self._http(url,True)
+        if not data["data"]:
+            print(data)
+            return 1
         # print(self.menu("GET_ORDER_IF",data["data"]))
         self.setAuthType(data)
         self.user_data["screen_id"],self.user_data["sku_id"],self.user_data["pay_money"] = self.menu("GET_ORDER_IF",data["data"])
@@ -167,6 +172,11 @@ class Api:
             # self.error_handle("获取token失败")
             print("失败信息: " + data["msg"])
             return 1
+
+        if data["data"]["shield"]["verifyMethod"]:
+            with open("url","w") as f:
+                print(1)
+                f.write(data["data"]["shield"]["naUrl"])
         self.user_data["token"] = data["data"]["token"]
         # print(data)
         # print(self.user_data["user_count"])
@@ -213,6 +223,7 @@ class Api:
             print("未获取到购买人信息")
         elif data["errno"] == 100050:    # Token过期
             print("Token已过期! 正在重新获取")
+            self.tokenGet()
         else:
             print("错误信息: ", data)
             # print(data)
@@ -319,7 +330,13 @@ class Api:
         # 加载登录信息
         self.load_cookie()
         # 加载演出信息
-        self.orderInfo()
+        while True:
+            try:
+                sleep(1.7)
+                if not self.orderInfo():
+                    break
+            except Exception as e:
+                pass
         # 加载购买人信息
         self.buyerinfo()
         # 获取购票token
@@ -328,10 +345,10 @@ class Api:
         i = 0
         while True:
             i = 1+i
-            sleep(0.3)
+            sleep(self.sleepTime)
             print("正在尝试第: %d次抢票"%i)
-            if self.tokenGet():
-                continue
+            # if self.tokenGet():
+                # continue
             if self.orderCreate():
                 os.system("pause")
                 break
@@ -341,4 +358,4 @@ class Api:
 
 
 if __name__ == '__main__':
-    Api(proxies="127.0.0.1:8080").start()
+    Api("").start()
