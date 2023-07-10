@@ -98,7 +98,8 @@ class Api:
     def orderInfo(self):
         # 获取目标
         self.user_data["project_id"] = re.search(r"id=\d+",self.menu("GET_SHOW")).group().split("=")[1]
-        print(self.user_data["project_id"])
+        # print(self.user_data["project_id"])
+        # exit(0)
         # 获取订单信息
         url = "https://show.bilibili.com/api/ticket/project/get?version=134&id=" + self.user_data["project_id"] + "&project_id="+ self.user_data["project_id"]
         data = self._http(url,True)
@@ -237,7 +238,7 @@ class Api:
     def menu(self,mtype,data=None):
         if mtype == "GET_SHOW":
             i = input("请输入购票链接并按回车继续 格式例如 https://show.bilibili.com/platform/detail.html?id=73711\n>>> ").strip()
-            if not re.match(r"^https://show\.bilibili\.com/platform/detail\.html\?id=\d+\&?.+",i):
+            if "bilibili" not in i or "id" not in i:
                 self.error_handle("网址格式错误")
             return i
         elif mtype == "GET_ORDER_IF":
