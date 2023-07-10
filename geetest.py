@@ -60,7 +60,7 @@ class dealCode():
 		self.load_cookies()
 		while True:
 			sleep(0.25)
-			if not os.exists("url"):
+			if not os.path.exists("url"):
 				print("请在脚本目录打开此程序")
 				os.system("pause")
 			a = open("url","r")
