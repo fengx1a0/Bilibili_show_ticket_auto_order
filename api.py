@@ -108,6 +108,7 @@ class Api:
             return 1
         # print(self.menu("GET_ORDER_IF",data["data"]))
         self.setAuthType(data)
+        # print(self.user_data["auth_type"])
         self.user_data["screen_id"],self.user_data["sku_id"],self.user_data["pay_money"] = self.menu("GET_ORDER_IF",data["data"])
         # exit(0)
         # exit(0)
@@ -125,14 +126,16 @@ class Api:
         if not data:
             self.error_handle("项目不存在")
         self.user_data["auth_type"] = ""
-        for i in data["data"]["performance_desc"]["list"][1]["details"]:
-            if i["title"] == "实名认证":
-                if "一单一证" in i["content"]:
-                    self.user_data["auth_type"] = 1
-                elif "一人一证" in i["content"]:
-                    self.user_data["auth_type"] = 2
-        if not self.user_data["auth_type"]:
-            self.user_data["auth_type"] = 0
+        for _ in data["data"]["performance_desc"]["list"]:
+            if _["module"] == "base_info":
+                for i in _["details"]:
+                    if i["title"] == "实名认证":
+                        if "一单一证" in i["content"]:
+                            self.user_data["auth_type"] = 1
+                        elif "一人一证" in i["content"]:
+                            self.user_data["auth_type"] = 2
+                if not self.user_data["auth_type"]:
+                    self.user_data["auth_type"] = 0
 
     def buyerinfo(self):
         if self.user_data["auth_type"] == 0:
@@ -176,12 +179,13 @@ class Api:
 
         if data["data"]["shield"]["verifyMethod"]:
             with open("url","w") as f:
-                print(1)
+                print("需要验证，正在拉取验证码")
                 f.write(data["data"]["shield"]["naUrl"])
         self.user_data["token"] = data["data"]["token"]
         # print(data)
         # print(self.user_data["user_count"])
         print("\n购买Token获取成功")
+        return 0
 
     def orderCreate(self):
         # 创建订单
@@ -331,17 +335,21 @@ class Api:
         # 加载登录信息
         self.load_cookie()
         # 加载演出信息
-        while True:
-            try:
-                sleep(1.7)
-                if not self.orderInfo():
-                    break
-            except Exception as e:
-                pass
+        self.orderInfo()
+        # while True:
+            # try:
+                # sleep(1.7)
+                # if not self.orderInfo():
+                    # break
+            # except Exception as e:
+            #     pass
         # 加载购买人信息
         self.buyerinfo()
         # 获取购票token
-        self.tokenGet()
+        while True:
+            sleep(self.sleepTime)
+            if self.tokenGet() == 0:
+                break
         # 购票
         i = 0
         while True:
