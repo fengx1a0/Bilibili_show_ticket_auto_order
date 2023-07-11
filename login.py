@@ -17,7 +17,10 @@ def get_login():
     if not os.path.exists("user_data.json"):
         t =  open("user_data.json","w")
         t.write("{}")
-        t.close
+        t.close()
+        print("初始化成功!")
+        os.system("pause")
+        exit()
     with open("./user_data.json") as r:
         config = json.load(r)
     options = webdriver.EdgeOptions()
@@ -34,7 +37,7 @@ def get_login():
     
     WebDriver.get("https://account.bilibili.com/account/home")
     username = WebDriver.find_element(By.CLASS_NAME, "home-top-msg-name").text
-    userid = re.search(r"/\d{1,15}/",WebDriver.find_element(By.CLASS_NAME, "home-to-space").get_attribute("href")).group()[1:-1]
+    userid = re.search(r"/\d{1,30}/",WebDriver.find_element(By.CLASS_NAME, "home-to-space").get_attribute("href")).group()[1:-1]
     config[userid] = [username,deal_cookies(cookies)]
 
     WebDriver.quit()
