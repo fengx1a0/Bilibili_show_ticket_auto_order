@@ -18,8 +18,9 @@ class Api:
     """
     API操作
     """
-    def __init__(self,proxies=None,specificID=None,sleepTime=0.15):
+    def __init__(self,proxies=None,specificID=None,sleepTime=0.15,token=None):
         self.proxies=proxies
+        self.specificID=specificID
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:52.0) Gecko/20100101 Firefox/52.0",
             "Referer":"https://show.bilibili.com/",
@@ -36,6 +37,7 @@ class Api:
             "Connection": "keep-alive"
         }
         self.sleepTime = sleepTime
+        self.token = token
         self.user_data = {}
         self.user_data["specificID"] = specificID
         self.user_data["username"] = ""
@@ -183,6 +185,8 @@ class Api:
             with open("url","w") as f:
                 print("需要验证，正在拉取验证码")
                 f.write(data["data"]["shield"]["naUrl"])
+            if self.token:
+                self.sendNotification("该拉滑块验证码啦！")            
         self.user_data["token"] = data["data"]["token"]
         # print(data)
         # print(self.user_data["user_count"])
@@ -343,6 +347,14 @@ class Api:
                 self.error_handle("请输入正确的数量")
             return n
 
+    def sendNotification(self,msg):
+        data = {
+            "token": self.token,
+            "title": "抢票通知",
+            "content": msg,
+        }
+        url = "http://www.pushplus.plus/send"
+        self._http(url,data=urlencode(data),j=True)
 
     def start(self):
         # 加载登录信息
@@ -372,6 +384,8 @@ class Api:
             # if self.tokenGet():
                 # continue
             if self.orderCreate():
+                if self.token:
+                    self.sendNotification("抢票成功，请在10分钟内支付")
                 os.system("pause")
                 break
 
