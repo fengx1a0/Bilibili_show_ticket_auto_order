@@ -49,6 +49,7 @@ config.txt为配置文件，不指定值为None
 - proxies 指定代理 如：127.0.0.1:8080 (IP:PORT 请不要加前缀)
 - specificID 多个用户登陆后指定某一个人uid(bilibili) (多用户还没做等后面有必要再写)
 - sleep设置每次抢票请求间隔时间
+- token设置pushplus的个人token
 
 ## API文档
 
