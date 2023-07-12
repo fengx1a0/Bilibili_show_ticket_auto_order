@@ -86,8 +86,11 @@ class Api:
             print("请求超时 请检查网络")
             print(e)
 
+        if not res:
+            self.error_handle("ip可能被风控，请求地址: " + url)
+
         if res.code != 200:
-            raise Exception("ip可能被风控，请求地址: ",url)
+            self.error_handle("ip可能被风控，请求地址: " + url)
         if j:
             return json.loads(res.read().decode("utf-8","ignore"))
         elif raw:
@@ -128,8 +131,9 @@ class Api:
         self.user_data["auth_type"] = ""
         for _ in data["data"]["performance_desc"]["list"]:
             if _["module"] == "base_info":
+                # print(_)
                 for i in _["details"]:
-                    if i["title"] == "实名认证":
+                    if i["title"] == "实名认证" or i["title"] == "实名登记":
                         if "一单一证" in i["content"]:
                             self.user_data["auth_type"] = 1
                         elif "一人一证" in i["content"]:
@@ -222,8 +226,11 @@ class Api:
 
         data = self._http(url,True,urlencode(payload).replace("%27true%27","true").replace("%27","%22"))
         if data["errno"] == 0:
-            print("已成功抢到票, 请在10分钟内完成支付")
-            return 1
+            if self.checkOrder():
+                    print("已成功抢到票, 请在10分钟内完成支付")
+                    return 1
+            else:
+                print("糟糕，是张假票(同时锁定一张票，但是被其他人抢走了)\n马上重新开始抢票")
         elif data["errno"] == 209002:
             print("未获取到购买人信息")
         elif data["errno"] == 100050:    # Token过期
@@ -233,6 +240,16 @@ class Api:
             print("错误信息: ", data)
             # print(data)
         return 0
+
+    def checkOrder(self):
+        url = "https://show.bilibili.com/api/ticket/ordercenter/list"
+        data = self._http(url,True)
+        if(data['code'] == 0):
+            return re.search("待付款",data['data']['list'][0]['status_name'])
+        else:
+            print("获取订单列表失败")
+            print(data["data"])
+            return 1
 
     def error_handle(self,msg):
         print(msg)
