@@ -85,8 +85,6 @@ class Api:
         except Exception as e:
             print("请求超时 请检查网络")
             print(e)
-
-        if not res:
             self.error_handle("ip可能被风控，请求地址: " + url)
 
         if res.code != 200:
@@ -227,8 +225,8 @@ class Api:
         data = self._http(url,True,urlencode(payload).replace("%27true%27","true").replace("%27","%22"))
         if data["errno"] == 0:
             if self.checkOrder():
-                    print("已成功抢到票, 请在10分钟内完成支付")
-                    return 1
+                print("已成功抢到票, 请在10分钟内完成支付")
+                return 1
             else:
                 print("糟糕，是张假票(同时锁定一张票，但是被其他人抢走了)\n马上重新开始抢票")
         elif data["errno"] == 209002:
@@ -244,12 +242,10 @@ class Api:
     def checkOrder(self):
         url = "https://show.bilibili.com/api/ticket/ordercenter/list"
         data = self._http(url,True)
-        if(data['code'] == 0):
-            return re.search("待付款",data['data']['list'][0]['status_name'])
-        else:
-            print("获取订单列表失败")
-            print(data["data"])
+        if data['data']['list'][0]['status'] == 1:
             return 1
+        else:
+            return 0
 
     def error_handle(self,msg):
         print(msg)
@@ -384,4 +380,4 @@ class Api:
 
 
 if __name__ == '__main__':
-    Api("").start()
+    Api("127.0.0.1:8080").start()
