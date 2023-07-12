@@ -231,7 +231,7 @@ class Api:
                 print("糟糕，是张假票(同时锁定一张票，但是被其他人抢走了)\n马上重新开始抢票")
         elif data["errno"] == 209002:
             print("未获取到购买人信息")
-        elif data["errno"] == 100050:    # Token过期
+        elif "10005" in str(data["errno"]):    # Token过期
             print("Token已过期! 正在重新获取")
             self.tokenGet()
         else:
