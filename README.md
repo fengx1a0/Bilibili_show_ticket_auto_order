@@ -1,5 +1,7 @@
 # Bilibili_show_ticket_auto_order
 
+[！！！提交问题前请先看我！！！](HowToSubmitAnIssue.md)
+
 本项目核心借鉴自https://github.com/Hobr 佬
 
 Bilibili会员购抢票助手, 通过B站接口抢购目标漫展/演出
