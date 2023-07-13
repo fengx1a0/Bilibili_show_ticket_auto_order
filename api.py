@@ -38,6 +38,7 @@ class Api:
         }
         self.sleepTime = sleepTime
         self.token = token
+        self.start_time = time.time()
         self.user_data = {}
         self.user_data["specificID"] = specificID
         self.user_data["username"] = ""
@@ -186,7 +187,11 @@ class Api:
                 print("需要验证，正在拉取验证码")
                 f.write(data["data"]["shield"]["naUrl"])
             if self.token:
-                self.sendNotification("该拉滑块验证码啦！")            
+                self.end_time = time.time()
+                if self.end_time - self.start_time > 60:
+                    print(self.end_time - self.start_time)
+                    self.sendNotification("该拉滑块验证码啦！")
+                    self.start_time = self.end_time            
         self.user_data["token"] = data["data"]["token"]
         # print(data)
         # print(self.user_data["user_count"])
@@ -244,6 +249,8 @@ class Api:
         return 0
 
     def checkOrder(self):
+        print("下单成功！正在检查票务状态...请稍等")
+        sleep(10)
         url = "https://show.bilibili.com/api/ticket/ordercenter/list"
         data = self._http(url,True)
         if data['data']['list'][0]['status'] == 1:
