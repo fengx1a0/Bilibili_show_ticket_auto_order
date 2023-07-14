@@ -249,8 +249,8 @@ class Api:
         return 0
 
     def checkOrder(self):
-        # print("下单成功！正在检查票务状态...请稍等")
-        # sleep(10)
+        print("下单成功！正在检查票务状态...请稍等")
+        sleep(10)
         url = "https://show.bilibili.com/api/ticket/order/list?page=0&page_size=10"
         data = self._http(url,True)
         if data['data']['list'][0]['status'] == 1:
