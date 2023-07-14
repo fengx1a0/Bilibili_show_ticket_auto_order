@@ -53,8 +53,8 @@ iiiiimilet
 
 登录和抢票分开的，先运行登录.exe，登陆后再运行抢票.exe，运行了之后不要急着选，先把验证.exe启动起来
 
-不需要依赖
-
+需要依赖[Edgewebdriver](https://developer.microsoft.com/en-us/microsoft-edge/tools/webdriver/)
+下载后解压exe到项目根目录下
 ### 执行脚本
 
 ```shell
