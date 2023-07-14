@@ -253,7 +253,10 @@ class Api:
         sleep(10)
         url = "https://show.bilibili.com/api/ticket/order/list?page=0&page_size=10"
         data = self._http(url,True)
-        if data['data']['list'][0]['status'] == 1:
+        if "errno" in list(data.keys()):
+            print("检测到网络波动，正在重新检查...")
+            self.checkOrder()
+        elif data['data']['list'][0]['status'] == 1:
             return 1
         else:
             return 0
