@@ -255,7 +255,7 @@ class Api:
         data = self._http(url,True)
         if "errno" in list(data.keys()):
             print("检测到网络波动，正在重新检查...")
-            self.checkOrder()
+            return self.checkOrder()
         elif data['data']['list'][0]['status'] == 1:
             return 1
         else:
