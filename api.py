@@ -237,11 +237,10 @@ class Api:
         if data["errno"] == 0:
             if self.checkOrder():
                 print("已成功抢到票, 请在10分钟内完成支付")
-                self.tray_notify("抢票成功", "已成功抢到票, 请在10分钟内完成支付", "./ico/success.ico", timeout=20)
+                self.tray_notify("抢票成功", "已成功抢到票, 请在10分钟内完成支付", "success.ico", timeout=20)
                 return 1
             else:
                 print("糟糕，是张假票(同时锁定一张票，但是被其他人抢走了)\n马上重新开始抢票")
-                self.tray_notify("抢票失败", "糟糕，是张假票(同时锁定一张票，但是被其他人抢走了)\n马上重新开始抢票", "./ico/failed.ico", timeout=8)
         elif data["errno"] == 209002:
             print("未获取到购买人信息")
         elif "10005" in str(data["errno"]):    # Token过期
@@ -254,7 +253,6 @@ class Api:
 
     def checkOrder(self):
         print("下单成功！正在检查票务状态...请稍等")
-        self.tray_notify("下单成功", "正在检查票务状态...请稍等", "./ico/info.ico", timeout=5)
         sleep(10)
         url = "https://show.bilibili.com/api/ticket/order/list?page=0&page_size=10"
         data = self._http(url,True)
