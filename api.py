@@ -11,6 +11,7 @@ from urllib import request
 from urllib.request import Request as Reqtype
 from urllib.parse import urlencode
 from geetest import dealCode
+from plyer import notification as winTrayNotify
 
 
 
@@ -43,6 +44,7 @@ class Api:
         self.user_data["specificID"] = specificID
         self.user_data["username"] = ""
         self.user_data["project_id"] = ""
+        self.appName = "BilibiliShow_AutoOrder"
         # ALL_USER_DATA_LIST = [""]
 
     def load_cookie(self):
@@ -235,6 +237,7 @@ class Api:
         if data["errno"] == 0:
             if self.checkOrder():
                 print("已成功抢到票, 请在10分钟内完成支付")
+                self.tray_notify("抢票成功", "已成功抢到票, 请在10分钟内完成支付", "success.ico", timeout=20)
                 return 1
             else:
                 print("糟糕，是张假票(同时锁定一张票，但是被其他人抢走了)\n马上重新开始抢票")
@@ -368,6 +371,17 @@ class Api:
         }
         url = "http://www.pushplus.plus/send"
         self._http(url,data=urlencode(data),j=True)
+
+    def tray_notify(self, title, msg, iconPath, timeout=10):  # windows系统托盘通知（部分功能可能只在Win10及之后版本有效）
+        if not iconPath.endswith(".ico"):
+            raise ValueError(f"iconPath must be a .ico file or icon doesn't exist. Your icon path: {iconPath}")
+        winTrayNotify.notify(
+            title = title,
+            message = msg,
+            app_name= self.appName,
+            app_icon = iconPath,
+            timeout = timeout,
+        )
 
     def start(self):
         # 加载登录信息
