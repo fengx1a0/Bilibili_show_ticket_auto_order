@@ -68,7 +68,7 @@ class dealCode():
 			a.close()
 			if u and u.strip() != self.u:
 				self.u = u
-				win32api.MessageBox(0,'需要滑块验证！','通知',win32con.MB_OK)
+				win32api.MessageBox(0,'需要滑块验证！','通知',win32con.MB_ICONWARNING)  # 改为Warning box 有声音提醒
 				self.WebDriver.get(u)
 
 if __name__ == '__main__':
