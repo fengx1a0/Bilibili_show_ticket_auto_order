@@ -45,6 +45,7 @@ class Api:
         self.user_data["username"] = ""
         self.user_data["project_id"] = ""
         self.appName = "BilibiliShow_AutoOrder"
+        self.selectedTicketInfo = "未选择"
         # ALL_USER_DATA_LIST = [""]
 
     def load_cookie(self):
@@ -237,7 +238,16 @@ class Api:
         if data["errno"] == 0:
             if self.checkOrder():
                 print("已成功抢到票, 请在10分钟内完成支付")
-                self.tray_notify("抢票成功", "已成功抢到票, 请在10分钟内完成支付", "./ico/success.ico", timeout=20)
+                # 单个字符串显示购买人姓名
+                thisBuyerInfo = ""
+                # check if buyer_info is existed
+                if "buyer_info" in payload:
+                    for i in range(0, len(payload["buyer_info"])):
+                        if self.user_data["auth_type"] == 0:
+                            thisBuyerInfo += f"购票人{i + 1}：" + payload['buyer_info'][i][0] + " "
+                        else:
+                            thisBuyerInfo += f"购票人{i + 1}：" + payload['buyer_info'][i]["name"] + " "
+                self.tray_notify("抢票成功", "已成功抢到票, 请在10分钟内完成支付" + "\n" + self.selectedTicketInfo + "\n" + thisBuyerInfo, "./ico/success.ico", timeout=20)
                 return 1
             else:
                 print("糟糕，是张假票(同时锁定一张票，但是被其他人抢走了)\n马上重新开始抢票")
@@ -304,7 +314,8 @@ class Api:
                     self.error_handle("请输入正确序号")
             except:
                 self.error_handle("请输入正确数字")
-            print("\n已选择：", data["name"],data["screen_list"][date]["name"], data["screen_list"][date]["ticket_list"][choice]["desc"],data["screen_list"][date]["ticket_list"][choice]["price"]//100,"RMB")
+            self.selectedTicketInfo = data["name"] + " " + data["screen_list"][date]["name"] + " " + data["screen_list"][date]["ticket_list"][choice]["desc"]+ " " + str(data["screen_list"][date]["ticket_list"][choice]["price"]//100)+ " " +"RMB"
+            print("\n已选择：", self.selectedTicketInfo)
             return data["screen_list"][date]["id"],data["screen_list"][date]["ticket_list"][choice]["id"],data["screen_list"][date]["ticket_list"][choice]["price"]
         elif mtype == "GET_ID_INFO":
             if not data:
