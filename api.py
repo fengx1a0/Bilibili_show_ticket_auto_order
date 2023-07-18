@@ -246,7 +246,7 @@ class Api:
                         if self.user_data["auth_type"] == 0:
                             trayNotifyMessage += ['buyer_info'][i][0] + " "
                         else:
-                            trayNotifyMessage += f"购票人{i + 1}：" + payload['buyer_info'][i]["name"] + " "
+                            trayNotifyMessage += payload['buyer_info'][i]["name"] + " "
                 trayNotifyMessage += "\n" + self.selectedTicketInfo
                 # check if trayNotifyMessage is too long
                 if len(trayNotifyMessage) > 500:
@@ -327,7 +327,7 @@ class Api:
             if self.user_data["auth_type"] == 1:
                 print("\n此演出为一单一证，只需选择1个购票人，如 1")
                 if len(data["list"]) <= 0:
-                    self.error_handle("你没有填写任何一个购票人哦，请前往会员购提前填写购票人信息")
+                    self.error_handle("你的账号里一个购票人信息都没填写哦，请前往会员购提前填写购票人信息")
                 for i in range(len(data["list"])):
                     print(str(i+1) + ":" , "姓名: " + data["list"][i]["name"], "手机号:" , data["list"][i]["tel"], "身份证:", data["list"][i]["personal_id"])
                 p = input("购票人序号 >>> ").strip()
