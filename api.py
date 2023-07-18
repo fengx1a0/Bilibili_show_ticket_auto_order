@@ -11,7 +11,7 @@ from urllib import request
 from urllib.request import Request as Reqtype
 from urllib.parse import urlencode
 from geetest import dealCode
-from plyer import notification as winTrayNotify
+from plyer import notification as trayNotify
 
 
 
@@ -238,16 +238,20 @@ class Api:
         if data["errno"] == 0:
             if self.checkOrder():
                 print("已成功抢到票, 请在10分钟内完成支付")
-                # 单个字符串显示购买人姓名
-                thisBuyerInfo = ""
-                # check if buyer_info is existed
+                trayNotifyMessage = "已成功抢到票, 请在10分钟内完成支付" + "\n" + "购票人："
+                # + thisBuyerInfo + self.selectedTicketInfo + "\n"
+                # Add buyer info
                 if "buyer_info" in payload:
                     for i in range(0, len(payload["buyer_info"])):
                         if self.user_data["auth_type"] == 0:
-                            thisBuyerInfo += f"购票人{i + 1}：" + payload['buyer_info'][i][0] + " "
+                            trayNotifyMessage += ['buyer_info'][i][0] + " "
                         else:
-                            thisBuyerInfo += f"购票人{i + 1}：" + payload['buyer_info'][i]["name"] + " "
-                self.tray_notify("抢票成功", "已成功抢到票, 请在10分钟内完成支付" + "\n" + self.selectedTicketInfo + "\n" + thisBuyerInfo, "./ico/success.ico", timeout=20)
+                            trayNotifyMessage += f"购票人{i + 1}：" + payload['buyer_info'][i]["name"] + " "
+                trayNotifyMessage += "\n" + self.selectedTicketInfo
+                # check if trayNotifyMessage is too long
+                if len(trayNotifyMessage) > 500:
+                    trayNotifyMessage = trayNotifyMessage[:500] + "..."
+                self.tray_notify("抢票成功", trayNotifyMessage, "./ico/success.ico", timeout=20)
                 return 1
             else:
                 print("糟糕，是张假票(同时锁定一张票，但是被其他人抢走了)\n马上重新开始抢票")
@@ -388,7 +392,7 @@ class Api:
     def tray_notify(self, title, msg, iconPath, timeout=10):  # windows系统托盘通知（部分功能可能只在Win10及之后版本有效）
         if not iconPath.endswith(".ico"):
             raise ValueError(f"iconPath must be a .ico file or icon doesn't exist. Your icon path: {iconPath}")
-        winTrayNotify.notify(
+        trayNotify.notify(
             title = title,
             message = msg,
             app_name= self.appName,
