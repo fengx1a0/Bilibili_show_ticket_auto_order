@@ -11,7 +11,7 @@ from urllib import request
 from urllib.request import Request as Reqtype
 from urllib.parse import urlencode
 from geetest import dealCode
-from plyer import notification as winTrayNotify
+from plyer import notification as trayNotify
 
 
 
@@ -45,6 +45,7 @@ class Api:
         self.user_data["username"] = ""
         self.user_data["project_id"] = ""
         self.appName = "BilibiliShow_AutoOrder"
+        self.selectedTicketInfo = "未选择"
         # ALL_USER_DATA_LIST = [""]
 
     def load_cookie(self):
@@ -237,7 +238,20 @@ class Api:
         if data["errno"] == 0:
             if self.checkOrder():
                 print("已成功抢到票, 请在10分钟内完成支付")
-                self.tray_notify("抢票成功", "已成功抢到票, 请在10分钟内完成支付", "./ico/success.ico", timeout=20)
+                trayNotifyMessage = "已成功抢到票, 请在10分钟内完成支付" + "\n" + "购票人："
+                # + thisBuyerInfo + self.selectedTicketInfo + "\n"
+                # Add buyer info
+                if "buyer_info" in payload:
+                    for i in range(0, len(payload["buyer_info"])):
+                        if self.user_data["auth_type"] == 0:
+                            trayNotifyMessage += ['buyer_info'][i][0] + " "
+                        else:
+                            trayNotifyMessage += payload['buyer_info'][i]["name"] + " "
+                trayNotifyMessage += "\n" + self.selectedTicketInfo
+                # check if trayNotifyMessage is too long
+                if len(trayNotifyMessage) > 500:
+                    trayNotifyMessage = trayNotifyMessage[:500] + "..."
+                self.tray_notify("抢票成功", trayNotifyMessage, "./ico/success.ico", timeout=20)
                 return 1
             else:
                 print("糟糕，是张假票(同时锁定一张票，但是被其他人抢走了)\n马上重新开始抢票")
@@ -304,13 +318,16 @@ class Api:
                     self.error_handle("请输入正确序号")
             except:
                 self.error_handle("请输入正确数字")
-            print("\n已选择：", data["name"],data["screen_list"][date]["name"], data["screen_list"][date]["ticket_list"][choice]["desc"],data["screen_list"][date]["ticket_list"][choice]["price"]//100,"RMB")
+            self.selectedTicketInfo = data["name"] + " " + data["screen_list"][date]["name"] + " " + data["screen_list"][date]["ticket_list"][choice]["desc"]+ " " + str(data["screen_list"][date]["ticket_list"][choice]["price"]//100)+ " " +"RMB"
+            print("\n已选择：", self.selectedTicketInfo)
             return data["screen_list"][date]["id"],data["screen_list"][date]["ticket_list"][choice]["id"],data["screen_list"][date]["ticket_list"][choice]["price"]
         elif mtype == "GET_ID_INFO":
             if not data:
                 self.error_handle("用户信息为空，请登录或先上传身份信息后重试")
             if self.user_data["auth_type"] == 1:
                 print("\n此演出为一单一证，只需选择1个购票人，如 1")
+                if len(data["list"]) <= 0:
+                    self.error_handle("你的账号里一个购票人信息都没填写哦，请前往会员购提前填写购票人信息")
                 for i in range(len(data["list"])):
                     print(str(i+1) + ":" , "姓名: " + data["list"][i]["name"], "手机号:" , data["list"][i]["tel"], "身份证:", data["list"][i]["personal_id"])
                 p = input("购票人序号 >>> ").strip()
@@ -377,7 +394,7 @@ class Api:
     def tray_notify(self, title, msg, iconPath, timeout=10):  # windows系统托盘通知（部分功能可能只在Win10及之后版本有效）
         if not iconPath.endswith(".ico"):
             raise ValueError(f"iconPath must be a .ico file or icon doesn't exist. Your icon path: {iconPath}")
-        winTrayNotify.notify(
+        trayNotify.notify(
             title = title,
             message = msg,
             app_name= self.appName,
