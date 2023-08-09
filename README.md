@@ -1,5 +1,13 @@
 # Bilibili_show_ticket_auto_order
 
+## 截止到2023/8/9仍然可用
+
+<img width="273" alt="屏幕截图 2023-08-09 182035" src="https://github.com/fengx1a0/Bilibili_show_ticket_auto_order/assets/74698099/f0b2d1ad-928b-498d-9a79-f735e3f01c00">
+
+<img width="277" alt="屏幕截图 2023-08-09 182012" src="https://github.com/fengx1a0/Bilibili_show_ticket_auto_order/assets/74698099/4363ff9a-23a7-4f31-b0ea-0919ed1279d1">
+
+# 原介绍
+
 本项目核心借鉴自https://github.com/Hobr 佬
 
 Bilibili会员购抢票助手, 通过B站接口抢购目标漫展/演出
