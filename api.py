@@ -7,6 +7,7 @@ import os
 import time
 import re
 import json
+import sys
 from time import sleep
 from urllib import request
 from urllib.request import Request as Reqtype
@@ -310,6 +311,10 @@ class Api:
         elif "10005" in str(data["errno"]):    # Token过期
             print("Token已过期! 正在重新获取")
             self.tokenGet()
+        elif "100009" in str(data["errno"]):
+            print("错误信息：当前暂无余票，请耐心等候。")
+        elif "100001" in str(data["errno"]):
+            print("错误信息：获取频率过快。")
         else:
             print("错误信息: ", data)
             # print(data)
@@ -335,7 +340,7 @@ class Api:
     def error_handle(self,msg):
         print(msg)
         os.system("pause")
-        exit(0)
+        sys.exit(0)
 
     def menu(self,mtype,data=None):
         if mtype == "GET_SHOW":
