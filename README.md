@@ -1,6 +1,6 @@
 # Bilibili_show_ticket_auto_order
 
-## 截止到2023/8/9仍然可用
+## 截止到 2023/12/12 仍然可用
 
 <img width="273" alt="屏幕截图 2023-08-09 182035" src="https://github.com/fengx1a0/Bilibili_show_ticket_auto_order/assets/74698099/f0b2d1ad-928b-498d-9a79-f735e3f01c00">
 
@@ -86,13 +86,17 @@ czpwpq
 
 ### 执行脚本
 
+请确保引用的库安装正常。
+
 ```shell
-python login.py
-python main.py
-python geetest.py
+pip install -r requirements.txt
 ```
 
-该装的东西自己装
+```shell
+python login.py     //登录.exe
+python main.py      //抢票
+python geetest.py   //极验滑块验证
+```
 
 ### 新功能：微信公众号推送结果
 
@@ -120,3 +124,5 @@ pass
 加入token验证，手动拉滑块
 
 加入微信公众号推送消息功能
+
+加入对实体票邮寄地址的支持（需要提前添加）
