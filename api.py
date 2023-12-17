@@ -124,6 +124,9 @@ class Api:
             fa = a["prov"]+a["city"]+a["area"]+a["addr"]
             self.user_data["deliver_info"] = {}
             self.user_data["deliver_info"]["name"],self.user_data["deliver_info"]["tel"],self.user_data["deliver_info"]["addr_id"],self.user_data["deliver_info"]["addr"] = a["name"],a["phone"],a["id"],fa
+            if(data["data"]["express_fee"] != -1):
+                # 非包邮票加邮费测试 https://show.bilibili.com/platform/detail.html?id=77749 2023/12/17 23:10(CST) 测试通过
+                self.user_data["pay_money"] += data["data"]["express_fee"]
         # exit(0)
         # exit(0)
         # self.user_data["screen_id"],self.user_data["sku_id"],self.user_data["pay_money"] = data["data"]["screen_list"][CHOOSE_DAY-1]["id"]
@@ -355,8 +358,6 @@ class Api:
                 print("本演出/展览票面为电子票/兑换票。")
             if data["has_paper_ticket"] == 1:
                 print("本演出/展览包含纸质票。")
-                if data["express_fee"] == -1:
-                    print("本演出纸质票可包邮。")
             print("\n请选择场次序号并按回车继续，格式例如 1")
             for i in range(len(data["screen_list"])):
                 print(str(i+1) + ":",data["screen_list"][i]["name"])
