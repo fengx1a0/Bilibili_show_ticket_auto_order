@@ -124,9 +124,6 @@ class Api:
             fa = a["prov"]+a["city"]+a["area"]+a["addr"]
             self.user_data["deliver_info"] = {}
             self.user_data["deliver_info"]["name"],self.user_data["deliver_info"]["tel"],self.user_data["deliver_info"]["addr_id"],self.user_data["deliver_info"]["addr"] = a["name"],a["phone"],a["id"],fa
-            if(data["data"]["express_fee"] != -1):
-                # 非包邮票加邮费测试 https://show.bilibili.com/platform/detail.html?id=77749 2023/12/17 23:10(CST) 测试通过
-                self.user_data["pay_money"] += data["data"]["express_fee"]
         # exit(0)
         # exit(0)
         # self.user_data["screen_id"],self.user_data["sku_id"],self.user_data["pay_money"] = data["data"]["screen_list"][CHOOSE_DAY-1]["id"]
@@ -139,6 +136,17 @@ class Api:
 
         # print("订单信息获取成功")
     
+    def getExpressFee(self):
+        url = "https://show.bilibili.com/api/ticket/project/get?version=134&id=" + self.user_data["project_id"] + "&project_id="+ self.user_data["project_id"]
+        data = self._http(url,True)
+        if not data["data"]:
+            print(data)
+            return 1
+        e = data["data"]["express_fee"]
+        if(e == -1):
+            return 0
+        return e
+
     def setAuthType(self,data):
         if not data:
             self.error_handle("项目不存在")
@@ -265,7 +273,7 @@ class Api:
                     "count": self.user_data["user_count"],
                     "deviceId": "",
                     "order_type": 1,
-                    "pay_money": int(self.user_data["pay_money"]) * int(self.user_data["user_count"]),
+                    "pay_money": int(self.user_data["pay_money"]) * int(self.user_data["user_count"]) + self.getExpressFee(),
                     "project_id": self.user_data["project_id"],
                     "screen_id": self.user_data["screen_id"],
                     "sku_id": self.user_data["sku_id"],
@@ -279,7 +287,7 @@ class Api:
                     "count": self.user_data["user_count"],
                     "deviceId": "",
                     "order_type": 1,
-                    "pay_money": int(self.user_data["pay_money"]) * int(self.user_data["user_count"]),
+                    "pay_money": int(self.user_data["pay_money"]) * int(self.user_data["user_count"]) + self.getExpressFee(),
                     "project_id": self.user_data["project_id"],
                     "screen_id": self.user_data["screen_id"],
                     "sku_id": self.user_data["sku_id"],
