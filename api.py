@@ -158,7 +158,7 @@ class Api:
                     if i["title"] == "实名认证" or i["title"] == "实名登记":
                         if "一单一证" in i["content"]:
                             self.user_data["auth_type"] = 1
-                        elif "一人一证" in i["content"]:
+                        elif "一人一证" in i["content"] or "一人一票" in i["content"]:
                             self.user_data["auth_type"] = 2
                 if not self.user_data["auth_type"]:
                     self.user_data["auth_type"] = 0
