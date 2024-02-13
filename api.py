@@ -124,6 +124,7 @@ class Api:
             fa = a["prov"]+a["city"]+a["area"]+a["addr"]
             self.user_data["deliver_info"] = {}
             self.user_data["deliver_info"]["name"],self.user_data["deliver_info"]["tel"],self.user_data["deliver_info"]["addr_id"],self.user_data["deliver_info"]["addr"] = a["name"],a["phone"],a["id"],fa
+            # self.user_data["pay_money"] += data["data"]["express_fee"]
         # exit(0)
         # exit(0)
         # self.user_data["screen_id"],self.user_data["sku_id"],self.user_data["pay_money"] = data["data"]["screen_list"][CHOOSE_DAY-1]["id"]
@@ -153,9 +154,8 @@ class Api:
         self.user_data["auth_type"] = ""
         for _ in data["data"]["performance_desc"]["list"]:
             if _["module"] == "base_info":
-                # print(_)
                 for i in _["details"]:
-                    if i["title"] == "实名认证" or i["title"] == "实名登记":
+                    if i["title"] == "实名认证" or i["title"] == "实名登记" or i["title"] == "实名":
                         if "一单一证" in i["content"]:
                             self.user_data["auth_type"] = 1
                         elif "一人一证" in i["content"] or "一人一票" in i["content"]:
@@ -396,7 +396,7 @@ class Api:
             if self.user_data["auth_type"] == 1:
                 print("\n此演出为一单一证，只需选择1个购票人，如 1")
                 if len(data["list"]) <= 0:
-                    self.error_handle("你的账号里一个购票人信息都没填写哦，请前往会员购提前填写购票人信息")
+                    self.error_handle("你的账号里一个购票人信息都没填写哦，请前往哔哩哔哩客户端-会员购-个人中心-购票人信息提前填写购票人信息")
                 for i in range(len(data["list"])):
                     print(str(i+1) + ":" , "姓名: " + data["list"][i]["name"], "手机号:" , data["list"][i]["tel"], "身份证:", data["list"][i]["personal_id"])
                 p = input("购票人序号 >>> ").strip()
@@ -408,6 +408,8 @@ class Api:
                 except:
                     self.error_handle("请输入正确序号")
             if self.user_data["auth_type"] == 2:
+                if len(data["list"]) <= 0:
+                    self.error_handle("你的账号里一个购票人信息都没填写哦，请前往哔哩哔哩客户端-会员购-个人中心-购票人信息提前填写购票人信息")
                 print("\n此演出为一人一证，请选择购票人, 全部购票请输入0，其他请输入购票人序号，多个购票请用空格分隔，如 1 2")
                 for i in range(len(data["list"])):
                     print(str(i+1) + ":" , "姓名: " + data["list"][i]["name"], "手机号:" , data["list"][i]["tel"], "身份证:", data["list"][i]["personal_id"])
