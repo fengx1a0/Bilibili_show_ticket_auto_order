@@ -211,7 +211,8 @@ class Api:
         data = self._http(url,True,payload)
         if not data["data"]:
             # self.error_handle("获取token失败")
-            print("失败信息: " + data["msg"])
+            timestr = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())) + ": "
+            print(timestr+"失败信息: " + data["msg"])
             return 1
 
         if data["data"]["shield"]["verifyMethod"]:
@@ -295,11 +296,12 @@ class Api:
                     "token": self.user_data["token"],
                     "deliver_info": json.dumps(self.user_data["deliver_info"],ensure_ascii=0)
                 }
+        timestr = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
         data = self._http(url,True,urlencode(payload).replace("%27true%27","true").replace("%27","%22"))
         if data["errno"] == 0:
             if self.checkOrder():
-                print("已成功抢到票, 请在10分钟内完成支付")
-                trayNotifyMessage = "已成功抢到票, 请在10分钟内完成支付" + "\n" + "购票人："
+                print("已成功抢到票, 请在10分钟内完成支付.实际成交时间:"+timestr)
+                trayNotifyMessage = timestr+"已成功抢到票, 请在10分钟内完成支付" + "\n" + "购票人："
                 # + thisBuyerInfo + self.selectedTicketInfo + "\n"
                 # Add buyer info
                 if "buyer_info" in payload:
@@ -313,28 +315,31 @@ class Api:
                 if len(trayNotifyMessage) > 500:
                     trayNotifyMessage = trayNotifyMessage[:500] + "..."
                 self.tray_notify("抢票成功", trayNotifyMessage, "./ico/success.ico", timeout=20)
+                if self.token:
+                    self.sendNotification(trayNotifyMessage)
                 return 1
             else:
                 print("糟糕，是张假票(同时锁定一张票，但是被其他人抢走了)\n马上重新开始抢票")
                 self.tray_notify("抢票失败", "糟糕，是张假票(同时锁定一张票，但是被其他人抢走了)\n马上重新开始抢票", "./ico/failed.ico", timeout=8)
         elif data["errno"] == 209002:
-            print("未获取到购买人信息")
+            print(timestr+"未获取到购买人信息")
         elif "10005" in str(data["errno"]):    # Token过期
-            print("Token已过期! 正在重新获取")
+            print(timestr+"Token已过期! 正在重新获取")
             self.tokenGet()
         elif "100009" in str(data["errno"]):
-            print("错误信息：当前暂无余票，请耐心等候。")
+            print(timestr+"错误信息：当前暂无余票，请耐心等候。")
         elif "100001" in str(data["errno"]):
-            print("错误信息：获取频率过快。")
+            print(timestr+"错误信息：获取频率过快。")
         else:
-            print("错误信息: ", data)
+            print(timestr+"错误信息: ", data)
             # print(data)
         return 0
 
     def checkOrder(self):
-        print("下单成功！正在检查票务状态...请稍等")
+        timestr = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))+":"
+        print(timestr+"下单成功！正在检查票务状态...请稍等")
         self.tray_notify("下单成功", "正在检查票务状态...请稍等", "./ico/info.ico", timeout=5)
-        sleep(10)
+        sleep(5)
         url = "https://show.bilibili.com/api/ticket/order/list?page=0&page_size=10"
         data = self._http(url,True)
         # print(data)
@@ -507,11 +512,8 @@ class Api:
             # if self.tokenGet():
                 # continue
             if self.orderCreate():
-                if self.token:
-                    self.sendNotification("抢票成功，请在10分钟内支付")
-                    open("url","w").write("https://show.bilibili.com/orderlist")
+                open("url","w").write("https://show.bilibili.com/orderlist")
                 os.system("pause")
-                open("url","w").write("")
                 break
 
     def test(self):
