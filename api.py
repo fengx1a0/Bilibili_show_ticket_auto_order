@@ -11,9 +11,14 @@ from urllib import request
 from urllib.request import Request as Reqtype
 from urllib.parse import urlencode
 from geetest import dealCode
+from enum import Enum
 from plyer import notification as trayNotify
 
 
+class EAuthType(Enum):
+    ONE_CERT_ONE_PERSON = "一人一证"
+    ONE_CERT_ONE_ORDER = "一单一证"
+    NO_CERT_REQUIRED = "无需证明"
 
 class Api:
     """
@@ -44,6 +49,10 @@ class Api:
         self.user_data["specificID"] = specificID
         self.user_data["username"] = ""
         self.user_data["project_id"] = ""
+        self.user_data["auth_type"] = ""
+        self.user_data["need_delivery"] = False
+        self.user_data["deliver_info"] = {}
+        self.user_data["express_fee"] = 0
         self.appName = "BilibiliShow_AutoOrder"
         self.selectedTicketInfo = "未选择"
         # ALL_USER_DATA_LIST = [""]
@@ -117,6 +126,7 @@ class Api:
         self.setAuthType(data)
         # print(self.user_data["auth_type"])
         self.user_data["screen_id"],self.user_data["sku_id"],self.user_data["pay_money"] = self.menu("GET_ORDER_IF",data["data"])
+        self.user_data["express_fee"] =  max(0, data["data"]["express_fee"])
         # exit(0)
         # exit(0)
         # self.user_data["screen_id"],self.user_data["sku_id"],self.user_data["pay_money"] = data["data"]["screen_list"][CHOOSE_DAY-1]["id"]
@@ -128,30 +138,39 @@ class Api:
         # self.user_data["user_count"] = "1"
 
         # print("订单信息获取成功")
-    
+    '''
+    description: 判断演出类型
+    '''    
     def setAuthType(self,data):
         if not data:
             self.error_handle("项目不存在")
         self.user_data["auth_type"] = ""
-        for _ in data["data"]["performance_desc"]["list"]:
-            if _["module"] == "base_info":
-                # print(_)
-                for i in _["details"]:
-                    if i["title"] == "实名认证" or i["title"] == "实名登记":
-                        if "一单一证" in i["content"]:
+
+        for item in data["data"]["performance_desc"]["list"]:
+            if item["module"] == "base_info":
+                for detail in item["details"]:
+                    title = detail.get("title", "")
+                    content = detail.get("content", "")
+                    if title in ["实名认证", "实名登记"]:
+                        if "一单一证" in content:
                             self.user_data["auth_type"] = 1
-                        elif "一人一证" in i["content"]:
+                        elif "一人一证" in content:
                             self.user_data["auth_type"] = 2
+                    if title == "入场说明":
+                        keywords = ["快递", "顺丰"]
+                        if any(keyword in content for keyword in keywords):
+                            self.user_data["need_delivery"] = True
                 if not self.user_data["auth_type"]:
                     self.user_data["auth_type"] = 0
 
-    def buyerinfo(self):
+
+    def buyerInfo(self):
         if self.user_data["auth_type"] == 0:
             self.user_data["buyer_name"], self.user_data["buyer_phone"] = self.menu("GET_NORMAL_INFO")
             self.user_data["user_count"] = self.menu("GET_T_COUNT")
             return
         # 获取购票人
-        url = "https://show.bilibili.com/api/ticket/buyer/list?is_default&projectId=" + self.user_data["project_id"]
+        url = "https://show.bilibili.com/api/ticket/buyer/list"
         data = self._http(url,True)
 
         self.user_data["buyer"] = self.menu("GET_ID_INFO", data["data"])
@@ -165,8 +184,16 @@ class Api:
         for i in range(0, len(self.user_data["buyer"])):
             self.user_data["buyer"][i]["isBuyerInfoVerified"] = "true"
             self.user_data["buyer"][i]["isBuyerValid"] = "true"
+
+        # 判断是否需要快递配送
+        if not self.user_data["need_delivery"]:
+            return
         
-       
+        # 加入快递配送信息
+        url = "https://show.bilibili.com/api/ticket/addr/list"
+        data = self._http(url,True)
+        self.user_data["deliver_info"] = self.menu("GET_DELIVERY_INFO", data["data"])
+            
         # self.user_data["buyer"] = data["data"]["list"]
         # print(self.user_data["buyer"])
         # exit()
@@ -210,10 +237,11 @@ class Api:
             payload = {
                 "buyer": self.user_data["buyer_name"],
                 "tel": self.user_data["buyer_phone"],
+                "deliver_info" : self.user_data["deliver_info"],
                 "count": self.user_data["user_count"],
                 "deviceId": "",
                 "order_type": 1,
-                "pay_money": int(self.user_data["pay_money"]) * int(self.user_data["user_count"]),
+                "pay_money": int(self.user_data["pay_money"]) * int(self.user_data["user_count"]) + int(self.user_data["express_fee"]),
                 "project_id": self.user_data["project_id"],
                 "screen_id": self.user_data["screen_id"],
                 "sku_id": self.user_data["sku_id"],
@@ -223,10 +251,11 @@ class Api:
         else:
             payload = {
                 "buyer_info": self.user_data["buyer"],
+                "deliver_info" : self.user_data["deliver_info"],
                 "count": self.user_data["user_count"],
                 "deviceId": "",
                 "order_type": 1,
-                "pay_money": int(self.user_data["pay_money"]) * int(self.user_data["user_count"]),
+                "pay_money": int(self.user_data["pay_money"]) * int(self.user_data["user_count"]) + int(self.user_data["express_fee"]),
                 "project_id": self.user_data["project_id"],
                 "screen_id": self.user_data["screen_id"],
                 "sku_id": self.user_data["sku_id"],
@@ -287,13 +316,35 @@ class Api:
         print(msg)
         os.system("pause")
         exit(0)
-
+    
+    '''
+    description: 用户交互
+    '''
     def menu(self,mtype,data=None):
         if mtype == "GET_SHOW":
             i = input("请输入购票链接并按回车继续 格式例如 https://show.bilibili.com/platform/detail.html?id=73711\n>>> ").strip()
             if "bilibili" not in i or "id" not in i:
                 self.error_handle("网址格式错误")
             return i
+        elif mtype == "GET_DELIVERY_INFO":
+            print("\n请选择快递邮寄地址的序号并按回车继续，格式例如 1")
+            for i, addr in enumerate(data["addr_list"], start=1):
+                print(f"{i}: {addr['name']},{addr['phone']},{addr['prov']}{addr['city']}{addr['area']}{addr['addr']}")
+            index = input("地址序号 >>> ").strip()
+            try:
+                index = int(index) - 1
+                addr = data["addr_list"][index]
+                deliverInfo = {
+                    "name": addr['name'],
+                    "tel": addr["phone"],
+                    "addr_id": addr["id"],
+                    "addr": f"{addr['prov']}{addr['city']}{addr['area']}{addr['addr']}"
+                }
+                print(f"\n已选择: {deliverInfo['name']},{deliverInfo['tel']},{deliverInfo['addr']}")
+                return deliverInfo
+            except:
+                self.error_handle("请输入正确序号")
+            return
         elif mtype == "GET_ORDER_IF":
             print("\n演出名称: " + data["name"])
             print("票务状态: " + data["sale_flag"])
@@ -415,7 +466,7 @@ class Api:
             # except Exception as e:
             #     pass
         # 加载购买人信息
-        self.buyerinfo()
+        self.buyerInfo()
         # 获取购票token
         while True:
             sleep(self.sleepTime)
