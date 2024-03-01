@@ -157,11 +157,16 @@ class Api:
                         elif "一人一证" in content:
                             self.user_data["auth_type"] = 2
                     if title == "入场说明":
-                        keywords = ["快递", "顺丰"]
+                        keywords = ["顺丰"]
                         if any(keyword in content for keyword in keywords):
                             self.user_data["need_delivery"] = True
                 if not self.user_data["auth_type"]:
                     self.user_data["auth_type"] = 0
+        
+        if "has_paper_ticket" in data["data"] and data["data"]["has_paper_ticket"]:
+            self.user_data["need_delivery"] = True
+        if "express_fee" in data["data"] and data["data"]["express_fee"] > 0:
+            self.user_data["need_delivery"] = True
 
 
     def buyerInfo(self):
