@@ -6,6 +6,8 @@ import json
 import os
 import time
 import re
+import json
+import sys
 from time import sleep
 from urllib import request
 from urllib.request import Request as Reqtype
@@ -117,6 +119,12 @@ class Api:
         self.setAuthType(data)
         # print(self.user_data["auth_type"])
         self.user_data["screen_id"],self.user_data["sku_id"],self.user_data["pay_money"] = self.menu("GET_ORDER_IF",data["data"])
+        if(data["data"]["has_paper_ticket"]):
+            a = self.addressInfo()
+            fa = a["prov"]+a["city"]+a["area"]+a["addr"]
+            self.user_data["deliver_info"] = {}
+            self.user_data["deliver_info"]["name"],self.user_data["deliver_info"]["tel"],self.user_data["deliver_info"]["addr_id"],self.user_data["deliver_info"]["addr"] = a["name"],a["phone"],a["id"],fa
+            # self.user_data["pay_money"] += data["data"]["express_fee"]
         # exit(0)
         # exit(0)
         # self.user_data["screen_id"],self.user_data["sku_id"],self.user_data["pay_money"] = data["data"]["screen_list"][CHOOSE_DAY-1]["id"]
@@ -129,18 +137,28 @@ class Api:
 
         # print("订单信息获取成功")
     
+    def getExpressFee(self):
+        url = "https://show.bilibili.com/api/ticket/project/get?version=134&id=" + self.user_data["project_id"] + "&project_id="+ self.user_data["project_id"]
+        data = self._http(url,True)
+        if not data["data"]:
+            print(data)
+            return 1
+        e = data["data"]["express_fee"]
+        if(e == -1):
+            return 0
+        return e
+
     def setAuthType(self,data):
         if not data:
             self.error_handle("项目不存在")
         self.user_data["auth_type"] = ""
         for _ in data["data"]["performance_desc"]["list"]:
             if _["module"] == "base_info":
-                # print(_)
                 for i in _["details"]:
-                    if i["title"] == "实名认证" or i["title"] == "实名登记":
+                    if i["title"] == "实名认证" or i["title"] == "实名登记" or i["title"] == "实名":
                         if "一单一证" in i["content"]:
                             self.user_data["auth_type"] = 1
-                        elif "一人一证" in i["content"]:
+                        elif "一人一证" in i["content"] or "一人一票" in i["content"]:
                             self.user_data["auth_type"] = 2
                 if not self.user_data["auth_type"]:
                     self.user_data["auth_type"] = 0
@@ -165,12 +183,23 @@ class Api:
         for i in range(0, len(self.user_data["buyer"])):
             self.user_data["buyer"][i]["isBuyerInfoVerified"] = "true"
             self.user_data["buyer"][i]["isBuyerValid"] = "true"
-        
        
         # self.user_data["buyer"] = data["data"]["list"]
         # print(self.user_data["buyer"])
         # exit()
         # print("购票人信息获取成功")
+
+    def addressInfo(self):
+        url = "https://show.bilibili.com/api/ticket/addr/list"
+        data = self._http(url,True)
+        if(len(data["data"]["addr_list"])<=0):
+            self.error_handle("请先前往会员购地址管理添加收货地址")
+        if data["errno"] != 0:
+            print("[会员购地址管理] 失败信息: " + data["msg"])
+            return 1
+        n = int(self.menu("GET_ADDRESS_LIST",data["data"]))-1
+        return data["data"]["addr_list"][n]
+        
 
     def tokenGet(self):
         # 获取token
@@ -182,7 +211,8 @@ class Api:
         data = self._http(url,True,payload)
         if not data["data"]:
             # self.error_handle("获取token失败")
-            print("失败信息: " + data["msg"])
+            timestr = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())) + ": "
+            print(timestr+"失败信息: " + data["msg"])
             return 1
 
         if data["data"]["shield"]["verifyMethod"]:
@@ -206,39 +236,72 @@ class Api:
         # url = "https://show.bilibili.com/api/ticket/order/createV2?project_id=" + config["projectId"]
         url = "https://show.bilibili.com/api/ticket/order/createV2?project_id=" + self.user_data["project_id"]
 
-        if self.user_data["auth_type"] == 0:
-            payload = {
-                "buyer": self.user_data["buyer_name"],
-                "tel": self.user_data["buyer_phone"],
-                "count": self.user_data["user_count"],
-                "deviceId": "",
-                "order_type": 1,
-                "pay_money": int(self.user_data["pay_money"]) * int(self.user_data["user_count"]),
-                "project_id": self.user_data["project_id"],
-                "screen_id": self.user_data["screen_id"],
-                "sku_id": self.user_data["sku_id"],
-                "timestamp": int(round(time.time() * 1000)),
-                "token": self.user_data["token"]
-            }
+        try:
+            self.user_data["deliver_info"]
+        except KeyError:
+            if self.user_data["auth_type"] == 0:
+                payload = {
+                    "buyer": self.user_data["buyer_name"],
+                    "tel": self.user_data["buyer_phone"],
+                    "count": self.user_data["user_count"],
+                    "deviceId": "",
+                    "order_type": 1,
+                    "pay_money": int(self.user_data["pay_money"]) * int(self.user_data["user_count"]),
+                    "project_id": self.user_data["project_id"],
+                    "screen_id": self.user_data["screen_id"],
+                    "sku_id": self.user_data["sku_id"],
+                    "timestamp": int(round(time.time() * 1000)),
+                    "token": self.user_data["token"]
+                }
+            else:
+                payload = {
+                    "buyer_info": self.user_data["buyer"],
+                    "count": self.user_data["user_count"],
+                    "deviceId": "",
+                    "order_type": 1,
+                    "pay_money": int(self.user_data["pay_money"]) * int(self.user_data["user_count"]),
+                    "project_id": self.user_data["project_id"],
+                    "screen_id": self.user_data["screen_id"],
+                    "sku_id": self.user_data["sku_id"],
+                    "timestamp": int(round(time.time() * 1000)),
+                    "token": self.user_data["token"]
+                }
         else:
-            payload = {
-                "buyer_info": self.user_data["buyer"],
-                "count": self.user_data["user_count"],
-                "deviceId": "",
-                "order_type": 1,
-                "pay_money": int(self.user_data["pay_money"]) * int(self.user_data["user_count"]),
-                "project_id": self.user_data["project_id"],
-                "screen_id": self.user_data["screen_id"],
-                "sku_id": self.user_data["sku_id"],
-                "timestamp": int(round(time.time() * 1000)),
-                "token": self.user_data["token"]
-            }
-
+            if self.user_data["auth_type"] == 0:
+                payload = {
+                    "buyer": self.user_data["buyer_name"],
+                    "tel": self.user_data["buyer_phone"],
+                    "count": self.user_data["user_count"],
+                    "deviceId": "",
+                    "order_type": 1,
+                    "pay_money": int(self.user_data["pay_money"]) * int(self.user_data["user_count"]) + self.getExpressFee(),
+                    "project_id": self.user_data["project_id"],
+                    "screen_id": self.user_data["screen_id"],
+                    "sku_id": self.user_data["sku_id"],
+                    "timestamp": int(round(time.time() * 1000)),
+                    "token": self.user_data["token"],
+                    "deliver_info": json.dumps(self.user_data["deliver_info"],ensure_ascii=0)
+                }
+            else:
+                payload = {
+                    "buyer_info": self.user_data["buyer"],
+                    "count": self.user_data["user_count"],
+                    "deviceId": "",
+                    "order_type": 1,
+                    "pay_money": int(self.user_data["pay_money"]) * int(self.user_data["user_count"]) + self.getExpressFee(),
+                    "project_id": self.user_data["project_id"],
+                    "screen_id": self.user_data["screen_id"],
+                    "sku_id": self.user_data["sku_id"],
+                    "timestamp": int(round(time.time() * 1000)),
+                    "token": self.user_data["token"],
+                    "deliver_info": json.dumps(self.user_data["deliver_info"],ensure_ascii=0)
+                }
+        timestr = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
         data = self._http(url,True,urlencode(payload).replace("%27true%27","true").replace("%27","%22"))
         if data["errno"] == 0:
             if self.checkOrder():
-                print("已成功抢到票, 请在10分钟内完成支付")
-                trayNotifyMessage = "已成功抢到票, 请在10分钟内完成支付" + "\n" + "购票人："
+                print("已成功抢到票, 请在10分钟内完成支付.实际成交时间:"+timestr)
+                trayNotifyMessage = timestr+"已成功抢到票, 请在10分钟内完成支付" + "\n" + "购票人："
                 # + thisBuyerInfo + self.selectedTicketInfo + "\n"
                 # Add buyer info
                 if "buyer_info" in payload:
@@ -252,24 +315,31 @@ class Api:
                 if len(trayNotifyMessage) > 500:
                     trayNotifyMessage = trayNotifyMessage[:500] + "..."
                 self.tray_notify("抢票成功", trayNotifyMessage, "./ico/success.ico", timeout=20)
+                if self.token:
+                    self.sendNotification(trayNotifyMessage)
                 return 1
             else:
                 print("糟糕，是张假票(同时锁定一张票，但是被其他人抢走了)\n马上重新开始抢票")
                 self.tray_notify("抢票失败", "糟糕，是张假票(同时锁定一张票，但是被其他人抢走了)\n马上重新开始抢票", "./ico/failed.ico", timeout=8)
         elif data["errno"] == 209002:
-            print("未获取到购买人信息")
+            print(timestr+"未获取到购买人信息")
         elif "10005" in str(data["errno"]):    # Token过期
-            print("Token已过期! 正在重新获取")
+            print(timestr+"Token已过期! 正在重新获取")
             self.tokenGet()
+        elif "100009" in str(data["errno"]):
+            print(timestr+"错误信息：当前暂无余票，请耐心等候。")
+        elif "100001" in str(data["errno"]):
+            print(timestr+"错误信息：获取频率过快。")
         else:
-            print("错误信息: ", data)
+            print(timestr+"错误信息: ", data)
             # print(data)
         return 0
 
     def checkOrder(self):
-        print("下单成功！正在检查票务状态...请稍等")
+        timestr = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))+":"
+        print(timestr+"下单成功！正在检查票务状态...请稍等")
         self.tray_notify("下单成功", "正在检查票务状态...请稍等", "./ico/info.ico", timeout=5)
-        sleep(10)
+        sleep(5)
         url = "https://show.bilibili.com/api/ticket/order/list?page=0&page_size=10"
         data = self._http(url,True)
         # print(data)
@@ -286,7 +356,7 @@ class Api:
     def error_handle(self,msg):
         print(msg)
         os.system("pause")
-        exit(0)
+        sys.exit(0)
 
     def menu(self,mtype,data=None):
         if mtype == "GET_SHOW":
@@ -297,6 +367,10 @@ class Api:
         elif mtype == "GET_ORDER_IF":
             print("\n演出名称: " + data["name"])
             print("票务状态: " + data["sale_flag"])
+            if data["has_eticket"] == 1:
+                print("本演出/展览票面为电子票/兑换票。")
+            if data["has_paper_ticket"] == 1:
+                print("本演出/展览包含纸质票。")
             print("\n请选择场次序号并按回车继续，格式例如 1")
             for i in range(len(data["screen_list"])):
                 print(str(i+1) + ":",data["screen_list"][i]["name"])
@@ -327,7 +401,7 @@ class Api:
             if self.user_data["auth_type"] == 1:
                 print("\n此演出为一单一证，只需选择1个购票人，如 1")
                 if len(data["list"]) <= 0:
-                    self.error_handle("你的账号里一个购票人信息都没填写哦，请前往会员购提前填写购票人信息")
+                    self.error_handle("你的账号里一个购票人信息都没填写哦，请前往哔哩哔哩客户端-会员购-个人中心-购票人信息提前填写购票人信息")
                 for i in range(len(data["list"])):
                     print(str(i+1) + ":" , "姓名: " + data["list"][i]["name"], "手机号:" , data["list"][i]["tel"], "身份证:", data["list"][i]["personal_id"])
                 p = input("购票人序号 >>> ").strip()
@@ -339,6 +413,8 @@ class Api:
                 except:
                     self.error_handle("请输入正确序号")
             if self.user_data["auth_type"] == 2:
+                if len(data["list"]) <= 0:
+                    self.error_handle("你的账号里一个购票人信息都没填写哦，请前往哔哩哔哩客户端-会员购-个人中心-购票人信息提前填写购票人信息")
                 print("\n此演出为一人一证，请选择购票人, 全部购票请输入0，其他请输入购票人序号，多个购票请用空格分隔，如 1 2")
                 for i in range(len(data["list"])):
                     print(str(i+1) + ":" , "姓名: " + data["list"][i]["name"], "手机号:" , data["list"][i]["tel"], "身份证:", data["list"][i]["personal_id"])
@@ -366,7 +442,6 @@ class Api:
                         return t
                     except:
                         self.error_handle("请输入正确序号")
-        
         elif mtype == "GET_NORMAL_INFO":
             print("\n此演出无需身份电话信息，请填写姓名和联系方式后按回车")
             name = input("姓名 >>> ").strip()
@@ -381,6 +456,13 @@ class Api:
             if not re.match(r"^\d{1,2}$",n):
                 self.error_handle("请输入正确的数量")
             return n
+        elif mtype == "GET_ADDRESS_LIST":
+            print("\n请选择实体票发货地址(仅单地址)")
+            for i in range(len(data["addr_list"])):
+                print(str(i+1) + ":" , data["addr_list"][i]["prov"]+data["addr_list"][i]["city"]+data["addr_list"][i]["area"]+data["addr_list"][i]["addr"] + " 收件人:" + data["addr_list"][i]["name"] + " " + data["addr_list"][i]["phone"])
+            p = input("收货地址序号 >>> ").strip()
+            return p
+
 
     def sendNotification(self,msg):
         data = {
@@ -430,8 +512,7 @@ class Api:
             # if self.tokenGet():
                 # continue
             if self.orderCreate():
-                if self.token:
-                    self.sendNotification("抢票成功，请在10分钟内支付")
+                open("url","w").write("https://show.bilibili.com/orderlist")
                 os.system("pause")
                 break
 

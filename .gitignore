@@ -1,0 +1,5 @@
+build/
+dist/
+*.spec
+__pycache__/
+user_data.json
